@@ -1,11 +1,10 @@
 <?php
-    require 'classes/database.php';
+    require 'required/includes.php';
+    require 'required/blogPost.php';
 
     $database = new Database;
-    $post = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
     $database->query('SELECT * FROM posts');
     $rows = $database->resultset();
-    //print_r($rows);
 
     if(@$_POST['delete'])
     {
@@ -28,11 +27,11 @@
         $database->execute();
     }
 
-     if(@$post['submit'])
+     if(@$_POST['submit'])
      {
-         $title = $post['title'];
-         $body = $post['body'];
-         $id = $post['id'];
+         $title = $_POST['title'];
+         $body = $_POST['body'];
+         $id = $_POST['id'];
 
          $database->query('INSERT INTO posts (id, title, body) VALUES(:id, :title, :body)');
          $database->bind(':title', $title);
@@ -45,37 +44,105 @@
            echo '<p>Post Added!</p>';
          }
      }
+?>
 
-     $database->query('SELECT * FROM posts');
-    ?>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <h1>Add Post</h1>
-     <form method="post" action="<?= $_SERVER['PHP_SELF']; ?>">
-         <label>Post ID</label><br>
-         <input type="text" name="id" placeholder="Specify ID"><br><br>
+        <title>My Blog</title>
 
-        <label>Post Title</label><br />
-        <input type="text" name="title" placeholder="Add a Title..." /><br /><br />
+        <link href="required/css/bootstrap.min.css" rel="stylesheet">
+        <link href="required/css/styles.css" rel="stylesheet">
+    </head>
 
-        <label>Post Body</label><br />
-        <textarea name="body"></textarea><br /><br />
+    <body>
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
 
-        <input type="submit" name="submit" value="Submit" />
-        <input type="submit" name="update" value="Update">
-     </form>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
+                    </ul>
 
-    <h1>Posts</h1>
-    <div>
-        <?php foreach($rows as $row) { ?>
-        <div>
-            <h3><?= $row['title']; ?></h3>
-            <p><?= $row['body']; ?></p>
-            <br>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a id="loginLink">Login <span class="glyphicon glyphicon-log-in"></span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
 
-            <form method="post" action="<?= $_SERVER['PHP_SELF'];?>">
-                <input type="hidden" name="delete_id" value="<?= $row['id']; ?>">
-                <input type="submit" name = "delete" value="Delete">
-            </form>
+        <div class="container">
+
+            <?php $count = 0; foreach($rows as $row){ ?>
+            <div class="row">
+                <div class="col-xs-12 col-sm-10 col-sm-pull-1">
+                    <div class="row row-content">
+                        <div class="col-md-12">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div style="float: left">
+                                        <h2 style="margin-top: 10px"><?= $row['title']?></h2>
+                                    </div>
+                                    <div style="float: left; margin-top: 12px; margin-left: 15px">
+                                        <?php
+                                                    $database->query('SELECT * FROM tags LEFT JOIN (blogPostTags) ON (tags.tagsId = blogPostTags.tagsId) WHERE blogPostTags.postId = :inId');
+                                                    $database->bind(':inId', $inPostId);
+                                                    $database->execute();
+                                        ?>
+                                        <a class="btn btn-sm btn-success" style="color: white">School</a>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-md-2" style="float: left">
+                                            <img src="<?= $row['imgUrl']?>" height=200 width=350>
+                                        </div>
+                                        <div class="col-md-7 col-md-push-3" style="white-space: normal; float: left">
+                                            <p>
+                                                <?= $row['body']?>
+                                            </p>
+                                            <div style="float: right; margin-bottom: 10px">
+                                                <button class="btn btn-primary">Read More</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if ($count == 0) { ?>
+                <div class="col-xs-12 col-sm-2 col-sm-pull-1">
+                    <div class="row row-content">
+                        <div class="col-md-12">
+                            <label>Tags</label>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+                <?php } $count++;?>
+            </div>
+
+            <?php }?>
         </div>
-      <?php } ?>
-    </div>
+
+        <!-- jQuery -->
+        <script src="required/js/jquery.min.js"></script>
+        <script src="required/js/bootstrap.min.js"></script>
+    </body>
+</html>

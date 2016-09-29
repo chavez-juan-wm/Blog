@@ -78,7 +78,7 @@
             return $this->dbh->lastInsertId();
         }
 
-        //if we fetch a list of data we want it to come back in a resultset
+        //fetch the data
         public function resultset()
         {
             $this->execute();
