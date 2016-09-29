@@ -1,49 +1,9 @@
 <?php
     require 'required/includes.php';
-    require 'required/blogPost.php';
 
     $database = new Database;
     $database->query('SELECT * FROM posts ORDER BY create_date DESC');
     $rows = $database->resultset();
-
-    if(@$_POST['delete'])
-    {
-        $delete_id = $_POST['delete_id'];
-        $database->query('DELETE FROM posts WHERE id = :id');
-        $database->bind(':id', $delete_id);
-        $database->execute();
-    }
-
-    if(@$_POST['update'])
-    {
-        $id = $_POST['id'];
-        $title = $_POST['title'];
-        $body = $_POST['body'];
-
-        $database->query('UPDATE posts SET title = :title, body = :body WHERE id = :id');
-        $database->bind(":title", $title);
-        $database->bind(':body', $body);
-        $database->bind(':id', $id);
-        $database->execute();
-    }
-
-     if(@$_POST['submit'])
-     {
-         $title = $_POST['title'];
-         $body = $_POST['body'];
-         $id = $_POST['id'];
-
-         $database->query('INSERT INTO posts (id, title, body) VALUES(:id, :title, :body)');
-         $database->bind(':title', $title);
-         $database->bind(':body', $body);
-         $database->bind(':id', $id);
-         $database->execute();
-
-         if($database->lastInsertId())
-         {
-           echo '<p>Post Added!</p>';
-         }
-     }
 ?>
 
 <!DOCTYPE html>
@@ -57,6 +17,7 @@
 
         <link href="required/css/bootstrap.min.css" rel="stylesheet">
         <link href="required/css/styles.css" rel="stylesheet">
+        <link href="required/css/animate.css" rel="stylesheet">
     </head>
 
     <body>
@@ -76,8 +37,85 @@
                         <li class="active"><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
                     </ul>
 
+                    <ul class="nav navbar-nav">
+                        <li><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+                    </ul>
+
                     <ul class="nav navbar-nav navbar-right">
-                        <li><a id="loginLink">Login <span class="glyphicon glyphicon-log-in"></span></a></li>
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown">Register <span class="caret"></span></a>
+                            <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
+                                <div class="col-lg-12">
+                                    <div class="text-center"><h3><b>Register</b></h3></div>
+                                    <form method="post" role="form">
+                                        <div class="form-group">
+                                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="firstName" id="firstName" class="form-control" placeholder="First Name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="lastName" id="lastName" class="form-control" placeholder="Last Name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="email" name="email" id="email" class="form-control" placeholder="Email Address" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="password" name="confirm-password" id="confirm-password" class="form-control" placeholder="Confirm Password" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="submit" name="register-submit" id="register-submit" class="form-control btn btn-info" value="Register Now">
+                                        </div>
+                                    </form>
+                                </div>
+                            </ul>
+                        </li>
+
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-in"> </span> Log In <span class="caret"></span></a>
+
+                            <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
+                                <div class="col-lg-12">
+                                    <div class="text-center"><h3><b>Log In</b></h3></div>
+                                    <form method="post" role="form">
+                                        <div class="form-group">
+                                            <label for="username">Username</label>
+                                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="password">Password</label>
+                                            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <div class="row">
+                                                <div class="col-xs-7">
+                                                    <input type="checkbox" name="remember" id="remember">
+                                                    <label for="remember"> Remember Me</label>
+                                                </div>
+                                                <div class="col-xs-5 pull-right">
+                                                    <input type="submit" name="login-submit" id="login-submit" class="form-control btn btn-success" value="Log In">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <div class="row">
+                                                <div class="col-lg-12">
+                                                    <div class="text-center">
+                                                        <a class="forgot-password">Forgot Password?</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -86,7 +124,7 @@
         <div class="container">
             <?php $count = 0; foreach($rows as $row){ ?>
             <div class="row">
-                <div class="col-xs-12 col-sm-10 col-sm-pull-1">
+                <div class="col-xs-12 col-sm-10">
                     <div class="row row-content">
                         <div class="col-md-12"  style="border: solid lightgray 1px; width: 900px">
                             <div class="row">
@@ -108,6 +146,9 @@
                                             else
                                                 echo '<a class="btn btn-sm btn-success" style="color: white">' . $tagName['name'] . '</a>';
                                             ?>
+                                    </div>
+                                    <div style="float: right">
+                                        <a class="btn-link"><span class="glyphicon glyphicon-edit"></span> Edit</a>
                                     </div>
                                 </div>
                                 <div class="col-md-12" style="margin-top: 12px; margin-bottom: 5px">
@@ -148,15 +189,29 @@
                 </div>
 
                 <?php if ($count == 0) { ?>
-                <div class="col-xs-12 col-sm-2 col-sm-pull-1">
-                    <div class="row row-content">
-                        <div class="col-md-12">
-                            <label>Tags</label>
-                            <hr>
+                    <div class="col-xs-12 col-sm-2 col-sm-pull-1" style="position: fixed; padding-left: 55px">
+                        <div class="row row-content" style="padding: 50px 0;">
+                            <div class="col-md-12" style="width: 200px">
+                                <h3>Tags</h3>
+                                <hr style="margin-top: 2px; margin-bottom: 8px">
+
+                                <?php
+                                $database->query('SELECT name FROM tags');
+                                $names = $database->resultset();
+
+                                if($database->rowNum != 1)
+                                {
+                                    foreach($names as $name)
+                                        echo "<a class=\"btn btn-success btn-xs\" style=\"margin-top: 5px; margin-right: 5px\">". $name['name'] ."</a>";
+                                }
+                                else
+                                    echo "<a class=\"btn btn-success btn-xs\" style=\"margin-top: 5px; margin-right: 5px\">". $names['name'] ."</a>";
+                                ?>
+                            </div>
                         </div>
                     </div>
-                </div>
                 <?php } $count++;?>
+
             </div>
 
             <?php }?>

@@ -1,10 +1,9 @@
-<!-- In this lesson, we want to create a couple more methods so that we can make queries to the db -->
 <?php
     class Database
     {
         private $host   = 'localhost';
         private $user   = 'root';
-        private $pass   = 'root';
+        private $pass   = '';
         private $dbname = 'myBlog';
         private $dbh;
         private $error;
@@ -88,6 +87,10 @@
             {
                 $this->rowNum = 1;
                 return $this->stmt->fetch(PDO::FETCH_ASSOC);
+            }
+            else if($this->stmt->rowCount() == 0)
+            {
+                $this->rowNum = FALSE;
             }
             else
             {

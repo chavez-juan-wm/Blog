@@ -4,3 +4,18 @@
     padding: 70px 0px;
     min-height: 400px;
 }
+
+/* General sizing */
+ul.dropdown-lr {
+    width: 300px;
+}
+
+/* mobile fix */
+@media (max-width: 768px) {
+    .dropdown-lr h3 {
+        color: #eee;
+    }
+    .dropdown-lr label {
+        color: #eee;
+    }
+}
