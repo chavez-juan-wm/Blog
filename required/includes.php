@@ -9,6 +9,7 @@
         private $dbh;
         private $error;
         private $stmt;
+        public $rowNum;
 
         public function __construct()
         {
@@ -82,6 +83,16 @@
         public function resultset()
         {
             $this->execute();
-            return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if($this->stmt->rowCount() == 1)
+            {
+                $this->rowNum = 1;
+                return $this->stmt->fetch(PDO::FETCH_ASSOC);
+            }
+            else
+            {
+                $this->rowNum = 0;
+                return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
         }
     }

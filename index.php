@@ -3,7 +3,7 @@
     require 'required/blogPost.php';
 
     $database = new Database;
-    $database->query('SELECT * FROM posts');
+    $database->query('SELECT * FROM posts ORDER BY create_date DESC');
     $rows = $database->resultset();
 
     if(@$_POST['delete'])
@@ -84,12 +84,11 @@
         </nav>
 
         <div class="container">
-
             <?php $count = 0; foreach($rows as $row){ ?>
             <div class="row">
                 <div class="col-xs-12 col-sm-10 col-sm-pull-1">
                     <div class="row row-content">
-                        <div class="col-md-12">
+                        <div class="col-md-12"  style="border: solid lightgray 1px; width: 900px">
                             <div class="row">
                                 <div class="col-md-12">
                                     <div style="float: left">
@@ -97,28 +96,50 @@
                                     </div>
                                     <div style="float: left; margin-top: 12px; margin-left: 15px">
                                         <?php
-                                                    $database->query('SELECT * FROM tags LEFT JOIN (blogPostTags) ON (tags.tagsId = blogPostTags.tagsId) WHERE blogPostTags.postId = :inId');
-                                                    $database->bind(':inId', $inPostId);
-                                                    $database->execute();
-                                        ?>
-                                        <a class="btn btn-sm btn-success" style="color: white">School</a>
+                                            $database->query('SELECT name FROM tags LEFT JOIN (blogPostTags) ON (tags.tagsId = blogPostTags.tagsId) WHERE blogPostTags.postId = :inId');
+                                            $database->bind(':inId', $row['postId']);
+                                            $tagName = $database->resultset();
+
+                                            if($database->rowNum != 1)
+                                            {
+                                                foreach($tagName as $name)
+                                                    echo '<a class="btn btn-sm btn-success" style="color: white">' . $name["name"] . '</a> ';
+                                            }
+                                            else
+                                                echo '<a class="btn btn-sm btn-success" style="color: white">' . $tagName['name'] . '</a>';
+                                            ?>
                                     </div>
+                                </div>
+                                <div class="col-md-12" style="margin-top: 12px; margin-bottom: 5px">
+                                    Posted by <span class="glyphicon glyphicon-user"></span>
+                                    <?php
+                                        $originalDate = $row['create_date'];
+                                        $date = new DateTime($originalDate);
+                                        $time = date("g:i A", strtotime($row['create_date']));
+
+                                        $database->query('SELECT firstName, lastName FROM people LEFT JOIN (posts) ON (people.userId = posts.userId) WHERE posts.postId = :inId');
+                                        $database->bind(':inId', $row['postId']);
+                                        $names = $database->resultset();
+                                        echo " " . $names['firstName'] . " " . $names['lastName'] . " on <span class='glyphicon glyphicon-calendar'> </span> " . $date->format('m-d-Y') . " at <span class='glyphicon glyphicon-time'> </span> " . $time;
+                                    ?>
                                 </div>
 
                                 <div class="col-md-12">
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-md-2" style="float: left">
+                                    <div class="row" style="position: relative">
+                                        <div class="col-md-2" style="margin-bottom: 10px">
                                             <img src="<?= $row['imgUrl']?>" height=200 width=350>
                                         </div>
-                                        <div class="col-md-7 col-md-push-3" style="white-space: normal; float: left">
-                                            <p>
-                                                <?= $row['body']?>
+
+                                        <div class="col-md-7 col-md-push-3">
+                                            <p style="line-height: 200%">
+                                                <?php
+                                                    $truncated = (strlen($row['body']) > 400) ? substr($row['body'], 0, 400) . '...' : $row['body'];
+                                                    echo $truncated;
+                                                ?>
                                             </p>
-                                            <div style="float: right; margin-bottom: 10px">
-                                                <button class="btn btn-primary">Read More</button>
-                                            </div>
                                         </div>
+
+                                        <span style="position: absolute; right: 10px; bottom: 9px;"> <button class="btn btn-primary">Read More</button></span>
                                     </div>
                                 </div>
                             </div>
