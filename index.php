@@ -1,50 +1,18 @@
 <?php
+    // Start the session
+    session_start();
+
+    if(isset($_COOKIE['username']) && isset($_COOKIE['user_id']))
+    {
+        $_SESSION['user_id'] = $_COOKIE['user_id'];
+        $_SESSION['username'] = $_COOKIE['username'];
+    }
+
     require 'required/includes.php';
 
     $database = new Database;
     $database->query('SELECT * FROM posts ORDER BY create_date DESC');
     $rows = $database->resultset();
-
-    // Start the session
-    session_start();
-
-    // Clear the error message
-    $error_msg = "";
-
-    // If the user isn't logged in, try to log them in
-    if (!isset($_SESSION['user_id']))
-    {
-        if (@$_POST['login-submit'])
-        {
-            // Grab the user-entered log-in data
-            $user_username = $_POST['username'];
-            $user_password = $_POST['password'];
-
-            // Look up the username and password in the database
-            $database->query("SELECT user_id, username FROM people WHERE username = :user_username AND password = :user_password");
-            $database->bind(':user_username', $user_username);
-            $database->bind(':user_password', $user_password);
-            $database->execute();
-            $row = $database->resultset();
-
-            if ($database->rowNum == 1)
-            {
-                // The log-in is OK so set the user ID and username session vars (and cookies), and redirect to the home page
-                $_SESSION['user_id'] = $row['userId'];
-                $_SESSION['username'] = $row['userName'];
-
-                setcookie('user_id', $row['user_id'], time() + (60 * 60 * 24 * 30));    // expires in 30 days
-                setcookie('username', $row['username'], time() + (60 * 60 * 24 * 30));  // expires in 30 days
-
-                $home_url = 'http://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/index.php';
-                header('Location: ' . $home_url);
-            }
-            else {
-                // The username/password are incorrect so set an error message
-                $error_msg = 'Sorry, you must enter a valid username and password to log in.';
-            }
-        }
-    }
 ?>
 
 <!DOCTYPE html>
@@ -78,8 +46,38 @@
                         <li class="active"><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
                     </ul>
 
+                    <?php
+                        if(isset($_SESSION['user_id']))
+                        {
+                            ?>
+                            <ul class="nav navbar-nav">
+                                <li><a id="addPost" href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+                            </ul>
+                            <ul class="nav navbar-nav navbar-right">
+                                <li class="dropdown">
+                                    <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?> <span class="caret"></span></a>
+
+                                    <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
+                                        <div class="col-lg-12">
+                                            <div class="text-center"><h3><b>Log Out</b></h3></div>
+                                            <form method="post" action="logIO.php" role="form">
+                                                <div class="form-group">
+                                                    <button name="logout" class="btn btn-danger" value="logout">Logout</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <?php
+
+                        }
+                        else
+                        {
+                    ?>
+
                     <ul class="nav navbar-nav">
-                        <li><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+                        <li><a id="addPost" data-toggle="tooltip" data-placement="bottom" title="Log in first to add a post." href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
                     </ul>
 
                     <ul class="nav navbar-nav navbar-right">
@@ -121,7 +119,7 @@
                             <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
                                 <div class="col-lg-12">
                                     <div class="text-center"><h3><b>Log In</b></h3></div>
-                                    <form method="post" role="form">
+                                    <form method="post" role="form" action="logIO.php">
                                         <div class="form-group">
                                             <label for="username">Username</label>
                                             <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
@@ -135,7 +133,7 @@
                                         <div class="form-group">
                                             <div class="row">
                                                 <div class="col-xs-7">
-                                                    <input type="checkbox" name="remember" id="remember">
+                                                    <input type="checkbox" name="remember" id="remember" value="remember">
                                                     <label for="remember"> Remember Me</label>
                                                 </div>
                                                 <div class="col-xs-5 pull-right">
@@ -158,6 +156,7 @@
                             </ul>
                         </li>
                     </ul>
+                    <?php }?>
                 </div>
             </div>
         </nav>
@@ -167,6 +166,7 @@
             <div class="row">
                 <div class="col-xs-12 col-sm-10">
                     <div class="row row-content">
+                        <?php if(isset($_SESSION['error']) && $count == 0) echo $_SESSION['error'] ?>
                         <div class="col-md-12"  style="border: solid lightgray 1px; width: 900px">
                             <div class="row">
                                 <div class="col-md-12">
@@ -188,9 +188,20 @@
                                                 echo '<a class="btn btn-sm btn-success" style="color: white">' . $tagName['name'] . '</a>';
                                             ?>
                                     </div>
-                                    <div style="float: right">
-                                        <a class="btn-link"><span class="glyphicon glyphicon-edit"></span> Edit</a>
-                                    </div>
+
+                                    <?php
+                                        $database->query('SELECT userId FROM posts WHERE postId = :inId');
+                                        $database->bind(':inId', $row['postId']);
+                                        $userId = $database->resultset();
+
+                                        if(@$userId['userId'] == @$_SESSION['user_id'])
+                                        {
+
+                                    ?>
+                                        <div style="float: right">
+                                            <a class="btn-link"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+                                        </div>
+                                    <?php } ?>
                                 </div>
                                 <div class="col-md-12" style="margin-top: 12px; margin-bottom: 5px">
                                     Posted by <span class="glyphicon glyphicon-user"></span>
@@ -261,5 +272,17 @@
         <!-- jQuery -->
         <script src="required/js/jquery.min.js"></script>
         <script src="required/js/bootstrap.min.js"></script>
+
+        <script>
+            $(document).ready(function(){
+                $('[data-toggle="tooltip"]').tooltip();
+
+                $("#addPost").on("click", function(event)
+                {
+                    if(<?php if(!isset($_SESSION['username'])) echo true; ?>)
+                        event.preventDefault();
+                });
+            });
+        </script>
     </body>
 </html>

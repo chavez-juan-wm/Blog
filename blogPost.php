@@ -1,5 +1,6 @@
 <?php
     include "required/includes.php";
+    session_start();
 
     $database = new Database();
 
@@ -35,6 +36,7 @@
 
     <link href="required/css/bootstrap.min.css" rel="stylesheet">
     <link href="required/css/styles.css" rel="stylesheet">
+    <link href="required/css/animate.css" rel="stylesheet">
 </head>
 
 <body>
@@ -57,6 +59,30 @@
                 <ul class="nav navbar-nav">
                     <li class="active"><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
                 </ul>
+
+                <?php
+                if(@isset($_SESSION['user_id']))
+                {
+                    ?>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?> <span class="caret"></span></a>
+
+                            <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
+                                <div class="col-lg-12">
+                                    <div class="text-center"><h3><b>Log Out</b></h3></div>
+                                    <form method="post" action="logIO.php" role="form">
+                                        <div class="form-group">
+                                            <button name="logout" class="btn btn-danger" value="logout">Logout</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </ul>
+                        </li>
+                    </ul>
+                    <?php
+
+                } ?>
             </div>
         </div>
     </nav>
@@ -74,6 +100,7 @@
                 $title = $_POST['title'];
                 $body = $_POST['body'];
                 $tags = $_POST['tag'];
+                $userId = $_SESSION['user_id'];
 
                 if ((($screenshot_type == 'image/gif') || ($screenshot_type == 'image/jpeg') || ($screenshot_type == 'image/pjpeg') || ($screenshot_type == 'image/png')) && ($screenshot_size > 0) && ($screenshot_size <= GW_MAXFILESIZE))
                 {
@@ -84,9 +111,10 @@
 
                         if (move_uploaded_file($_FILES['screenshot']['tmp_name'], $target))
                         {
-                            $database->query('INSERT INTO posts (title, body, imgUrl) VALUES(:title, :body, :img)');
+                            $database->query('INSERT INTO posts (title, body, userId, imgUrl) VALUES(:title, :body, :userId, :img)');
                             $database->bind(':title', $title);
                             $database->bind(':body', $body);
+                            $database->bind(':userId', $userId);
                             $database->bind(':img', $screenshot);
                             $database->execute();
 
@@ -167,13 +195,13 @@
                         </div>
 
                         <br><label for="screenshot">Image:</label><br>
-                        <input type="file" id="screenshot" name="screenshot" />
+                        <input type="file" id="screenshot" name="screenshot" required>
                     </div>
                     <div class="col-md-10" style="position: relative">
                         <label>Post Body</label><br />
                         <textarea name="body" style="width: 935px; height: 350px" required></textarea><br /><br /><br>
 
-                        <input style="position: absolute; bottom: 0; right: 0" type="submit" id="submit" name="submit" value="Submit" />
+                        <input class="btn btn-primary" style="position: absolute; bottom: 0; right: 0" type="submit" id="submit" name="submit" value="Submit" />
                     </div>
                 </div>
 <!--                <input type="submit" name="update" value="Update">-->
