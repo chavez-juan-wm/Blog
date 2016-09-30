@@ -23,49 +23,6 @@
         $database->bind(':id', $id);
         $database->execute();
     }
-
-    if(@$_POST['submit'])
-    {
-
-        $title = $_POST['title'];
-        $body = $_POST['body'];
-        $tags = $_POST['tag'];
-
-        $database->query('INSERT INTO posts (title, body) VALUES(:title, :body)');
-        $database->bind(':title', $title);
-        $database->bind(':body', $body);
-        $database->execute();
-
-        $postId = $database->lastInsertId();
-
-        foreach($tags as $value)
-        {
-            $database->query('SELECT tagsId FROM tags WHERE name = :name');
-            $database->bind(':name', $value);
-            $database->execute();
-            $result = $database->resultset();
-
-            if(!$database->rowNum)
-            {
-                $database->query('INSERT INTO tags (name) VALUES(:name)');
-                $database->bind(':name', $value);
-                $database->execute();
-                $tagId = $database->lastInsertId();
-
-                $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
-                $database->bind(':tag', $tagId);
-                $database->bind(':post', $postId);
-                $database->execute();
-            }
-            else
-            {
-                $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
-                $database->bind(':tag', $result['tagsId']);
-                $database->bind(':post', $postId);
-                $database->execute();
-            }
-        }
-    }
 ?>
 
 <html lang="en">
@@ -100,22 +57,91 @@
                 <ul class="nav navbar-nav">
                     <li class="active"><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
                 </ul>
-
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a id="loginLink">Login <span class="glyphicon glyphicon-log-in"></span></a></li>
-                </ul>
             </div>
         </div>
     </nav>
 
     <div class="container">
         <div class="row row-content">
-            <h1>Add a Post</h1> <?php  if(@$postId)
+            <h1>Add a Post</h1>
+            <?php
+            if(@$_POST['submit'])
             {
-                echo '<p style="color: green;">Post Added!</p>';
-            } ?><hr>
+                $screenshot_type = $_FILES['screenshot']['type'];
+                $screenshot_size = $_FILES['screenshot']['size'];
+                $screenshot = $_FILES['screenshot']['name'];
 
-            <form method="post" action="<?= $_SERVER['PHP_SELF']; ?>">
+                $title = $_POST['title'];
+                $body = $_POST['body'];
+                $tags = $_POST['tag'];
+
+                if ((($screenshot_type == 'image/gif') || ($screenshot_type == 'image/jpeg') || ($screenshot_type == 'image/pjpeg') || ($screenshot_type == 'image/png')) && ($screenshot_size > 0) && ($screenshot_size <= GW_MAXFILESIZE))
+                {
+                    if (@$_FILES['file']['error'] == 0)
+                    {
+                        // Move the file to the target upload folder
+                        $target = GW_UPLOADPATH . $screenshot;
+
+                        if (move_uploaded_file($_FILES['screenshot']['tmp_name'], $target))
+                        {
+                            $database->query('INSERT INTO posts (title, body, imgUrl) VALUES(:title, :body, :img)');
+                            $database->bind(':title', $title);
+                            $database->bind(':body', $body);
+                            $database->bind(':img', $screenshot);
+                            $database->execute();
+
+                            $postId = $database->lastInsertId();
+
+                            foreach($tags as $value)
+                            {
+                                $database->query('SELECT tagsId FROM tags WHERE name = :name');
+                                $database->bind(':name', $value);
+                                $database->execute();
+                                $result = $database->resultset();
+
+                                if(!$database->rowNum)
+                                {
+                                    $database->query('INSERT INTO tags (name) VALUES(:name)');
+                                    $database->bind(':name', $value);
+                                    $database->execute();
+                                    $tagId = $database->lastInsertId();
+
+                                    $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
+                                    $database->bind(':tag', $tagId);
+                                    $database->bind(':post', $postId);
+                                    $database->execute();
+                                }
+                                else
+                                {
+                                    $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
+                                    $database->bind(':tag', $result['tagsId']);
+                                    $database->bind(':post', $postId);
+                                    $database->execute();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        echo '<p class="error">Sorry, there was a problem uploading your screen shot image.</p>';
+                    }
+                }
+                else
+                {
+                    echo '<p style="color: red" class="error">The screen shot must be a GIF, JPEG, or PNG image file no ' .
+                        'greater than ' . (GW_MAXFILESIZE / 1024) . ' KB in size.</p>';
+                }
+
+                // Try to delete the temporary screen shot image file
+                @unlink($_FILES['screenshot']['tmp_name']);
+            }
+                if(@$postId)
+                {
+                    echo '<p style="color: green;">Post Added!</p>';
+                }
+            ?><hr>
+
+            <form enctype="multipart/form-data" method="post" action="<?= $_SERVER['PHP_SELF']; ?>">
                 <div class="form-group">
                     <div class="col-md-2">
                         <label>Post Title</label><br />
@@ -139,6 +165,9 @@
                                 ?>
                             </datalist>
                         </div>
+
+                        <br><label for="screenshot">Image:</label><br>
+                        <input type="file" id="screenshot" name="screenshot" />
                     </div>
                     <div class="col-md-10" style="position: relative">
                         <label>Post Body</label><br />

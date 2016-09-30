@@ -4,6 +4,47 @@
     $database = new Database;
     $database->query('SELECT * FROM posts ORDER BY create_date DESC');
     $rows = $database->resultset();
+
+    // Start the session
+    session_start();
+
+    // Clear the error message
+    $error_msg = "";
+
+    // If the user isn't logged in, try to log them in
+    if (!isset($_SESSION['user_id']))
+    {
+        if (@$_POST['login-submit'])
+        {
+            // Grab the user-entered log-in data
+            $user_username = $_POST['username'];
+            $user_password = $_POST['password'];
+
+            // Look up the username and password in the database
+            $database->query("SELECT user_id, username FROM people WHERE username = :user_username AND password = :user_password");
+            $database->bind(':user_username', $user_username);
+            $database->bind(':user_password', $user_password);
+            $database->execute();
+            $row = $database->resultset();
+
+            if ($database->rowNum == 1)
+            {
+                // The log-in is OK so set the user ID and username session vars (and cookies), and redirect to the home page
+                $_SESSION['user_id'] = $row['userId'];
+                $_SESSION['username'] = $row['userName'];
+
+                setcookie('user_id', $row['user_id'], time() + (60 * 60 * 24 * 30));    // expires in 30 days
+                setcookie('username', $row['username'], time() + (60 * 60 * 24 * 30));  // expires in 30 days
+
+                $home_url = 'http://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/index.php';
+                header('Location: ' . $home_url);
+            }
+            else {
+                // The username/password are incorrect so set an error message
+                $error_msg = 'Sorry, you must enter a valid username and password to log in.';
+            }
+        }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -158,7 +199,7 @@
                                         $date = new DateTime($originalDate);
                                         $time = date("g:i A", strtotime($row['create_date']));
 
-                                        $database->query('SELECT firstName, lastName FROM people LEFT JOIN (posts) ON (people.userId = posts.userId) WHERE posts.postId = :inId');
+                                        $database->query('SELECT firstName, lastName FROM people LEFT JOIN posts ON people.userId = posts.userId WHERE posts.postId = :inId');
                                         $database->bind(':inId', $row['postId']);
                                         $names = $database->resultset();
                                         echo " " . $names['firstName'] . " " . $names['lastName'] . " on <span class='glyphicon glyphicon-calendar'> </span> " . $date->format('m-d-Y') . " at <span class='glyphicon glyphicon-time'> </span> " . $time;
@@ -168,14 +209,14 @@
                                 <div class="col-md-12">
                                     <div class="row" style="position: relative">
                                         <div class="col-md-2" style="margin-bottom: 10px">
-                                            <img src="<?= $row['imgUrl']?>" height=200 width=350>
+                                            <img src="pictures/<?= $row['imgUrl']?>" height=200 width=350>
                                         </div>
 
                                         <div class="col-md-7 col-md-push-3">
                                             <p style="line-height: 200%">
                                                 <?php
-                                                    $truncated = (strlen($row['body']) > 400) ? substr($row['body'], 0, 400) . '...' : $row['body'];
-                                                    echo $truncated;
+                                                    $cutOff = (strlen($row['body']) > 400) ? substr($row['body'], 0, 400) . '...' : $row['body'];
+                                                    echo $cutOff;
                                                 ?>
                                             </p>
                                         </div>

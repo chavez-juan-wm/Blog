@@ -1,9 +1,11 @@
 <?php
+    define('GW_UPLOADPATH', 'pictures/');
+    define('GW_MAXFILESIZE', 196608);
     class Database
     {
         private $host   = 'localhost';
         private $user   = 'root';
-        private $pass   = '';
+        private $pass   = 'root';
         private $dbname = 'myBlog';
         private $dbh;
         private $error;
