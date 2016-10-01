@@ -9,10 +9,20 @@
     }
 
     require 'required/includes.php';
-
     $database = new Database;
-    $database->query('SELECT * FROM posts ORDER BY create_date DESC');
-    $rows = $database->resultset();
+
+
+    if(isset($_GET['tagsId']))
+    {
+        $database->query('SELECT * FROM posts LEFT JOIN blogPostTags ON (posts.postId = blogPostTags.postId) WHERE blogPostTags.tagsId = :inId ');
+        $database->bind(':inId', $_GET['tagsId']);
+        $rows = $database->resultset();
+    }
+    else
+    {
+        $database->query('SELECT * FROM posts ORDER BY create_date DESC');
+        $rows = $database->resultset();
+    }
 ?>
 
 <!DOCTYPE html>
@@ -45,6 +55,10 @@
                     <ul class="nav navbar-nav">
                         <li class="active"><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
                     </ul>
+
+<!--                    <ul class="nav navbar-nav">-->
+<!--                        <li><button type="button" class="btn btn-link"><span class="glyphicon glyphicon-home"></span> Home</button></li>-->
+<!--                    </ul>-->
 
                     <?php
                         if(isset($_SESSION['user_id']))
@@ -199,7 +213,7 @@
 
                                     ?>
                                         <div style="float: right">
-                                            <a class="btn-link"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+                                            <a class="btn-link" href="editPost.php?postId=<?= $row['postId'] ?>"><span class="glyphicon glyphicon-edit"></span> Edit</a>
                                         </div>
                                     <?php } ?>
                                 </div>
@@ -254,7 +268,7 @@
                                 if($database->rowNum != 1)
                                 {
                                     foreach($names as $name)
-                                        echo "<a class=\"btn btn-success btn-xs\" style=\"margin-top: 5px; margin-right: 5px\">". $name['name'] ."</a>";
+                                        echo "<a class='btn btn-success btn-xs' style='margin-top: 5px; margin-right: 5px'>". $name['name'] ."</a>";
                                 }
                                 else
                                     echo "<a class=\"btn btn-success btn-xs\" style=\"margin-top: 5px; margin-right: 5px\">". $names['name'] ."</a>";
