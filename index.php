@@ -11,8 +11,13 @@
     require 'required/includes.php';
     $database = new Database;
 
-
-    if(isset($_GET['tagsId']))
+    if(isset($_GET['userId']))
+    {
+        $database->query('SELECT * FROM posts WHERE userId = :user ORDER BY create_date DESC');
+        $database->bind(':user', $_SESSION['user_id']);
+        $rows = $database->resultset();
+    }
+    else if(isset($_GET['tagsId']))
     {
         $database->query('SELECT * FROM posts LEFT JOIN blogPostTags ON (posts.postId = blogPostTags.postId) WHERE blogPostTags.tagsId = :inId ');
         $database->bind(':inId', $_GET['tagsId']);
@@ -67,22 +72,15 @@
                             <ul class="nav navbar-nav">
                                 <li><a id="addPost" href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
                             </ul>
-                            <ul class="nav navbar-nav navbar-right">
-                                <li class="dropdown">
-                                    <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?> <span class="caret"></span></a>
 
-                                    <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
-                                        <div class="col-lg-12">
-                                            <div class="text-center"><h3><b>Log Out</b></h3></div>
-                                            <form method="post" action="logIO.php" role="form">
-                                                <div class="form-group">
-                                                    <button name="logout" class="btn btn-danger" value="logout">Logout</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </ul>
-                                </li>
+                            <ul class="nav navbar-nav">
+                                <li><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
                             </ul>
+
+                            <ul class="nav navbar-nav navbar-right">
+                                <li><a id="logOut" data-toggle="tooltip" data-placement="bottom" title="Log Out" href="logIO.php?logout=yes"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?></a></li>
+                            </ul>
+
                             <?php
 
                         }
@@ -176,7 +174,114 @@
         </nav>
 
         <div class="container">
-            <?php $count = 0; foreach($rows as $row){ ?>
+            <?php
+            if($database->rowNum == 1)
+            { ?>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-10">
+                        <div class="row row-content">
+                            <?php if(isset($_SESSION['error']) && $count == 0) echo $_SESSION['error'] ?>
+                            <div class="col-md-12"  style="border: solid lightgray 1px; width: 900px">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div style="float: left">
+                                            <h2 style="margin-top: 10px"><?= $rows['title']?></h2>
+                                        </div>
+                                        <div style="float: left; margin-top: 12px; margin-left: 15px">
+                                            <?php
+                                            $database->query('SELECT name FROM tags LEFT JOIN (blogPostTags) ON (tags.tagsId = blogPostTags.tagsId) WHERE blogPostTags.postId = :inId');
+                                            $database->bind(':inId', $rows['postId']);
+                                            $tagName = $database->resultset();
+
+                                            if($database->rowNum != 1)
+                                            {
+                                                foreach($tagName as $name)
+                                                    echo '<a class="btn btn-sm btn-success" style="color: white">' . $name["name"] . '</a> ';
+                                            }
+                                            else
+                                                echo '<a class="btn btn-sm btn-success" style="color: white">' . $tagName['name'] . '</a>';
+                                            ?>
+                                        </div>
+
+                                        <?php
+                                        $database->query('SELECT userId FROM posts WHERE postId = :inId');
+                                        $database->bind(':inId', $rows['postId']);
+                                        $userId = $database->resultset();
+
+                                        if(@$userId['userId'] == @$_SESSION['user_id'])
+                                        {
+
+                                            ?>
+                                            <div style="float: right">
+                                                <a class="btn-link" href="editPost.php?postId=<?= $rows['postId'] ?>"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+                                            </div>
+                                        <?php } ?>
+                                    </div>
+                                    <div class="col-md-12" style="margin-top: 12px; margin-bottom: 5px">
+                                        Posted by <span class="glyphicon glyphicon-user"></span>
+                                        <?php
+                                        $originalDate = $rows['create_date'];
+                                        $date = new DateTime($originalDate);
+                                        $time = date("g:i A", strtotime($rows['create_date']));
+
+                                        $database->query('SELECT firstName, lastName FROM people LEFT JOIN posts ON people.userId = posts.userId WHERE posts.postId = :inId');
+                                        $database->bind(':inId', $rows['postId']);
+                                        $names = $database->resultset();
+                                        echo " " . $names['firstName'] . " " . $names['lastName'] . " on <span class='glyphicon glyphicon-calendar'> </span> " . $date->format('m-d-Y') . " at <span class='glyphicon glyphicon-time'> </span> " . $time;
+                                        ?>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <div class="row" style="position: relative">
+                                            <div class="col-md-2" style="margin-bottom: 10px">
+                                                <img src="pictures/<?= $rows['imgUrl']?>" height=200 width=350>
+                                            </div>
+
+                                            <div class="col-md-7 col-md-push-3">
+                                                <p style="line-height: 200%">
+                                                    <?php
+                                                    $cutOff = (strlen($rows['body']) > 400) ? substr($rows['body'], 0, 400) . '...' : $rows['body'];
+                                                    echo $cutOff;
+                                                    ?>
+                                                </p>
+                                            </div>
+
+                                            <span style="position: absolute; right: 10px; bottom: 9px;"> <button class="btn btn-primary">Read More</button></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-sm-2 col-sm-pull-1" style="position: fixed; padding-left: 55px">
+                        <div class="row row-content" style="padding: 50px 0;">
+                            <div class="col-md-12" style="width: 200px">
+                                <h3>Tags</h3>
+                                <hr style="margin-top: 2px; margin-bottom: 8px">
+
+                                <?php
+                                $database->query('SELECT * FROM tags');
+                                $names = $database->resultset();
+
+                                if($database->rowNum != 1)
+                                {
+                                    foreach($names as $name)
+                                        echo "<a class='btn btn-success btn-xs' href='index.php?tagsId=" . $name['tagsId'] ."' style='margin-top: 5px; margin-right: 5px'>". $name['name'] ."</a>";
+                                }
+                                else
+                                    echo "<a class='btn btn-success btn-xs' href='index.php?tagsId=" . $names['tagsId'] ."' style='margin-top: 5px; margin-right: 5px'>". $names['name'] ."</a>";
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php }
+                else {
+
+
+
+            $count = 0; foreach($rows as $row){ ?>
             <div class="row">
                 <div class="col-xs-12 col-sm-10">
                     <div class="row row-content">
@@ -262,16 +367,16 @@
                                 <hr style="margin-top: 2px; margin-bottom: 8px">
 
                                 <?php
-                                $database->query('SELECT name FROM tags');
+                                $database->query('SELECT * FROM tags');
                                 $names = $database->resultset();
 
                                 if($database->rowNum != 1)
                                 {
                                     foreach($names as $name)
-                                        echo "<a class='btn btn-success btn-xs' style='margin-top: 5px; margin-right: 5px'>". $name['name'] ."</a>";
+                                        echo "<a class='btn btn-success btn-xs' href='index.php?tagsId=" . $name['tagsId'] ."' style='margin-top: 5px; margin-right: 5px'>". $name['name'] ."</a>";
                                 }
                                 else
-                                    echo "<a class=\"btn btn-success btn-xs\" style=\"margin-top: 5px; margin-right: 5px\">". $names['name'] ."</a>";
+                                    echo "<a class='btn btn-success btn-xs' href='index.php?tagsId=" . $names['tagsId'] ."' style='margin-top: 5px; margin-right: 5px'>". $names['name'] ."</a>";
                                 ?>
                             </div>
                         </div>
@@ -280,7 +385,7 @@
 
             </div>
 
-            <?php }?>
+            <?php }}?>
         </div>
 
         <!-- jQuery -->
@@ -288,7 +393,8 @@
         <script src="required/js/bootstrap.min.js"></script>
 
         <script>
-            $(document).ready(function(){
+            $(document).ready(function()
+            {
                 $('[data-toggle="tooltip"]').tooltip();
 
                 $("#addPost").on("click", function(event)

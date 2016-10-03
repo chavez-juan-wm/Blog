@@ -42,7 +42,7 @@
         }
     }
 
-    if(@$_POST['logout'])
+    if(isset($_GET['logout']))
     {
         unset($_SESSION['username']);
         unset($_SESSION['user_id']);

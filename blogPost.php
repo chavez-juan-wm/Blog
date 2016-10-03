@@ -65,20 +65,7 @@
                 {
                     ?>
                     <ul class="nav navbar-nav navbar-right">
-                        <li class="dropdown">
-                            <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?> <span class="caret"></span></a>
-
-                            <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
-                                <div class="col-lg-12">
-                                    <div class="text-center"><h3><b>Log Out</b></h3></div>
-                                    <form method="post" action="logIO.php" role="form">
-                                        <div class="form-group">
-                                            <button name="logout" class="btn btn-danger" value="logout">Logout</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </ul>
-                        </li>
+                        <li><a id="logOut" data-toggle="tooltip" data-placement="bottom" title="Log Out" href="logIO.php?logout=yes"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?></a></li>
                     </ul>
                     <?php
 
@@ -214,7 +201,10 @@
     <script src="required/js/bootstrap.min.js"></script>
 
     <script>
-        $(document).ready(function(){
+        $(document).ready(function()
+        {
+            $('[data-toggle="tooltip"]').tooltip();
+
             var count = 1;
             $("#addTag").on("click", function(event)
             {
