@@ -60,6 +60,10 @@
                     <li class="active"><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
                 </ul>
 
+                <ul class="nav navbar-nav">
+                    <li><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
+                </ul>
+
                 <?php
                 if(@isset($_SESSION['user_id']))
                 {

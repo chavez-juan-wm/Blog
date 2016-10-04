@@ -1,6 +1,7 @@
 <?php
     define('GW_UPLOADPATH', 'pictures/');
     define('GW_MAXFILESIZE', 196608);
+
     class Database
     {
         private $host   = 'localhost';
@@ -96,7 +97,7 @@
             }
             else
             {
-                $this->rowNum = 0;
+                $this->rowNum = 2;
                 return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }

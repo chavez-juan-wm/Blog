@@ -10,10 +10,50 @@
 
     if(@$_POST['delete'])
     {
-        $delete_id = $_POST['delete_id'];
-        $database->query('DELETE FROM posts WHERE id = :id');
-        $database->bind(':id', $delete_id);
+        $database->query('DELETE FROM posts WHERE postId = :id');
+        $database->bind(':id', $_GET['postId']);
         $database->execute();
+
+        $database->query('SELECT tagsId FROM blogPostTags WHERE postId = :id');
+        $database->bind(':id', $_GET['postId']);
+        $database->execute();
+        $tagIds = $database->resultset();
+
+        if ($database->rowNum == 1)
+        {
+            $database->query('SELECT tagsId FROM blogPostTags WHERE tagsId = :id');
+            $database->bind(':id', $tagIds['tagsId']);
+            $database->resultset();
+
+            if($database->rowNum == 1)
+            {
+                $database->query('DELETE FROM tags WHERE tagsId = :id');
+                $database->bind(':id', $tagIds['tagsId']);
+                $database->execute();
+            }
+        }
+        else
+        {
+            foreach($tagIds as $value)
+            {
+                $database->query('SELECT tagsId FROM blogPostTags WHERE tagsId = :id');
+                $database->bind(':id', $value['tagsId']);
+                $database->resultset();
+
+                if($database->rowNum == 1)
+                {
+                    $database->query('DELETE FROM tags WHERE tagsId = :id');
+                    $database->bind(':id', $value['tagsId']);
+                    $database->execute();
+                }
+            }
+        }
+
+        $database->query('DELETE FROM blogPostTags WHERE postId = :id');
+        $database->bind(':id', $_GET['postId']);
+        $database->execute();
+
+        header("Location: index.php");
     }
 
         $database->query("SELECT * FROM posts WHERE postId = :id");
@@ -52,7 +92,11 @@
             </ul>
 
             <ul class="nav navbar-nav">
-                <li class="active"><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+                <li><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav">
+                <li><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
             </ul>
 
             <?php
@@ -60,20 +104,7 @@
             {
                 ?>
                 <ul class="nav navbar-nav navbar-right">
-                    <li class="dropdown">
-                        <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?> <span class="caret"></span></a>
-
-                        <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
-                            <div class="col-lg-12">
-                                <div class="text-center"><h3><b>Log Out</b></h3></div>
-                                <form method="post" action="logIO.php" role="form">
-                                    <div class="form-group">
-                                        <button name="logout" class="btn btn-danger" value="logout">Logout</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </ul>
-                    </li>
+                    <li><a id="logOut" data-toggle="tooltip" data-placement="bottom" title="Log Out" href="logIO.php?logout=yes"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?></a></li>
                 </ul>
                 <?php
 
@@ -88,16 +119,48 @@
         <?php
             if(@$_POST['update'])
             {
+                $screenshot_type = $_FILES['screenshot']['type'];
+                $screenshot_size = $_FILES['screenshot']['size'];
+                $screenshot = $_FILES['screenshot']['name'];
+
                 $title = $_POST['title'];
                 $body = $_POST['body'];
 
-                $database->query('UPDATE posts SET title = :title, body = :body WHERE postId = :id');
-                $database->bind(":title", $title);
-                $database->bind(':body', $body);
-                $database->bind(':id', $_GET['postId']);
-                $database->execute();
+                if($screenshot_size != 0 && $_FILES['screenshot']['error'] == 0)
+                {
+                    if ((($screenshot_type == 'image/gif') || ($screenshot_type == 'image/jpeg') || ($screenshot_type == 'image/pjpeg') || ($screenshot_type == 'image/png')) && ($screenshot_size > 0) && ($screenshot_size <= GW_MAXFILESIZE))
+                    {
+                        $target = GW_UPLOADPATH . $screenshot;
+                        $file = "pictures/" . $result['imgUrl'];
 
-                header("Location: index.php");
+                        if (!unlink($file))
+                        {
+                            echo ("Error deleting $file");
+                        }
+                        else
+                        {
+                            if(move_uploaded_file($_FILES['screenshot']['tmp_name'], $target))
+                            {
+                                $database->query('UPDATE posts SET title = :title, body = :body, imgUrl = :img WHERE postId = :id');
+                                $database->bind(":title", $title);
+                                $database->bind(':body', $body);
+                                $database->bind(':id', $_GET['postId']);
+                                $database->bind(':img', $screenshot);
+                                $database->execute();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    $database->query('UPDATE posts SET title = :title, body = :body WHERE postId = :id');
+                    $database->bind(":title", $title);
+                    $database->bind(':body', $body);
+                    $database->bind(':id', $_GET['postId']);
+                    $database->execute();
+                }
+
+                echo "<p style='color: green'>Your post was updated.</p>";
             }
         ?><hr>
 
@@ -105,7 +168,7 @@
             <div class="form-group">
                 <div class="col-md-2">
                     <label>Post Title</label><br />
-                    <input type="text" name="title" placeholder="Add a Title..." value="<?= $result['title']?>" required><br /><br />
+                    <input type="text" name="title" placeholder="Add a Title..." value="<?php if(isset($_POST['title'])) echo $_POST['title']; else echo $result['title'];?>" required><br /><br />
 
                     <div id="tags">
                         <label for="tag2">Tags</label><span style="margin-left: 5px"><button class="btn btn-default btn-xs" id="addTag">+</button></span>
@@ -127,12 +190,13 @@
                     </div>
 
                     <br><label for="screenshot">Image:</label><br>
-                    <input type="file" id="screenshot" name="screenshot" required>
+                    <input type="file" id="screenshot" name="screenshot">
                 </div>
                 <div class="col-md-10" style="position: relative">
                     <label>Post Body</label><br />
-                    <textarea name="body" style="width: 935px; height: 350px" required><?= $result['body'] ?></textarea><br /><br /><br>
+                    <textarea name="body" style="width: 935px; height: 350px" required><?php if(isset($_POST['body'])) echo $_POST['body']; else echo $result['body']; ?></textarea><br /><br /><br>
 
+                    <input class="btn btn-danger" style="position: absolute; bottom: 0; right: 75px" type="submit" id="delete" name="delete" value="Delete" />
                     <input class="btn btn-primary" style="position: absolute; bottom: 0; right: 0" type="submit" id="update" name="update" value="Update" />
                 </div>
             </div>
@@ -145,7 +209,10 @@
 <script src="required/js/bootstrap.min.js"></script>
 
 <script>
-    $(document).ready(function(){
+    $(document).ready(function()
+    {
+        $('[data-toggle="tooltip"]').tooltip();
+
         var count = 1;
         $("#addTag").on("click", function(event)
         {

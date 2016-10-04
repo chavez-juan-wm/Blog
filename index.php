@@ -1,6 +1,7 @@
 <?php
     // Start the session
     session_start();
+    $check = false;
 
     if(isset($_COOKIE['username']) && isset($_COOKIE['user_id']))
     {
@@ -16,10 +17,12 @@
         $database->query('SELECT * FROM posts WHERE userId = :user ORDER BY create_date DESC');
         $database->bind(':user', $_SESSION['user_id']);
         $rows = $database->resultset();
+        $check = true;
+
     }
     else if(isset($_GET['tagsId']))
     {
-        $database->query('SELECT * FROM posts LEFT JOIN blogPostTags ON (posts.postId = blogPostTags.postId) WHERE blogPostTags.tagsId = :inId ');
+        $database->query('SELECT * FROM posts LEFT JOIN blogPostTags ON (posts.postId = blogPostTags.postId) WHERE blogPostTags.tagsId = :inId ORDER BY create_date DESC');
         $database->bind(':inId', $_GET['tagsId']);
         $rows = $database->resultset();
     }
@@ -58,12 +61,8 @@
 
                 <div id="navbar" class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
-                        <li class="active"><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
+                        <li <?php if(!$check) echo "class='active'";?>><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
                     </ul>
-
-<!--                    <ul class="nav navbar-nav">-->
-<!--                        <li><button type="button" class="btn btn-link"><span class="glyphicon glyphicon-home"></span> Home</button></li>-->
-<!--                    </ul>-->
 
                     <?php
                         if(isset($_SESSION['user_id']))
@@ -74,7 +73,7 @@
                             </ul>
 
                             <ul class="nav navbar-nav">
-                                <li><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
+                                <li <?php if($check) echo "class='active'";?>><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
                             </ul>
 
                             <ul class="nav navbar-nav navbar-right">

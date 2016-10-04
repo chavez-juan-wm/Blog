@@ -24,17 +24,16 @@
                 // The log-in is OK so set the user ID and username session vars (and cookies), and redirect to the home page
                 $_SESSION['user_id'] = $row['userId'];
                 $_SESSION['username'] = $row['userName'];
+                unset($_SESSION['error']);
 
                 if(isset($_POST['remember']))
                 {
                     setcookie('user_id', $row['userId'], time() + (60 * 60 * 24 * 30), "/");    // expires in 30 days
                     setcookie('username', $row['userName'], time() + (60 * 60 * 24 * 30), "/");  // expires in 30 days
-                    unset($_SESSION['error']);
-
-                    echo $_COOKIE['username'] . "here";
                 }
             }
-            else {
+            else
+            {
                 // The username/password are incorrect so set an error message
                 $error_msg = '<p style="color: red">Sorry, you must enter a valid username and password to log in.</p>>';
                 $_SESSION['error'] = $error_msg;
@@ -46,6 +45,7 @@
     {
         unset($_SESSION['username']);
         unset($_SESSION['user_id']);
+        unset($_SESSION['error']);
         session_destroy();
 
         setcookie('user_id', '', time() - 3600, '/');
