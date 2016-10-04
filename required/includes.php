@@ -12,6 +12,7 @@
         private $error;
         private $stmt;
         public $rowNum;
+        public $count;
 
         public function __construct()
         {
@@ -85,13 +86,14 @@
         public function resultset()
         {
             $this->execute();
+            $this->count = $this->stmt->rowCount();
 
-            if($this->stmt->rowCount() == 1)
+            if($this->count == 1)
             {
                 $this->rowNum = 1;
                 return $this->stmt->fetch(PDO::FETCH_ASSOC);
             }
-            else if($this->stmt->rowCount() == 0)
+            else if($this->count == 0)
             {
                 $this->rowNum = FALSE;
             }

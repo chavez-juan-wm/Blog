@@ -125,6 +125,7 @@
 
                 $title = $_POST['title'];
                 $body = $_POST['body'];
+                $tags = $_POST['tag'];
 
                 if($screenshot_size != 0 && $_FILES['screenshot']['error'] == 0)
                 {
@@ -147,6 +148,73 @@
                                 $database->bind(':id', $_GET['postId']);
                                 $database->bind(':img', $screenshot);
                                 $database->execute();
+
+                                $database->query('SELECT tagsId FROM blogPostTags WHERE postId = :id');
+                                $database->bind(':id', $_GET['postId']);
+                                $database->execute();
+                                $tagIds = $database->resultset();
+
+                                if ($database->rowNum == 1)
+                                {
+                                    $database->query('SELECT tagsId FROM blogPostTags WHERE tagsId = :id');
+                                    $database->bind(':id', $tagIds['tagsId']);
+                                    $database->resultset();
+
+                                    if($database->rowNum == 1)
+                                    {
+                                        $database->query('DELETE FROM tags WHERE tagsId = :id');
+                                        $database->bind(':id', $tagIds['tagsId']);
+                                        $database->execute();
+                                    }
+                                }
+                                else
+                                {
+                                    foreach($tagIds as $value)
+                                    {
+                                        $database->query('SELECT tagsId FROM blogPostTags WHERE tagsId = :id');
+                                        $database->bind(':id', $value['tagsId']);
+                                        $database->resultset();
+
+                                        if($database->rowNum == 1)
+                                        {
+                                            $database->query('DELETE FROM tags WHERE tagsId = :id');
+                                            $database->bind(':id', $value['tagsId']);
+                                            $database->execute();
+                                        }
+                                    }
+                                }
+
+                                $database->query('DELETE FROM blogPostTags WHERE postId = :id');
+                                $database->bind(':id', $_GET['postId']);
+                                $database->execute();
+
+                                foreach($tags as $value)
+                                {
+                                    $database->query('SELECT tagsId FROM tags WHERE name = :name');
+                                    $database->bind(':name', $value);
+                                    $database->execute();
+                                    $result = $database->resultset();
+
+                                    if(!$database->rowNum)
+                                    {
+                                        $database->query('INSERT INTO tags (name) VALUES(:name)');
+                                        $database->bind(':name', $value);
+                                        $database->execute();
+                                        $tagId = $database->lastInsertId();
+
+                                        $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
+                                        $database->bind(':tag', $tagId);
+                                        $database->bind(':post', $_GET['postId']);
+                                        $database->execute();
+                                    }
+                                    else
+                                    {
+                                        $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
+                                        $database->bind(':tag', $result['tagsId']);
+                                        $database->bind(':post', $_GET['postId']);
+                                        $database->execute();
+                                    }
+                                }
                             }
                         }
                     }
@@ -158,6 +226,73 @@
                     $database->bind(':body', $body);
                     $database->bind(':id', $_GET['postId']);
                     $database->execute();
+
+                    $database->query('SELECT tagsId FROM blogPostTags WHERE postId = :id');
+                    $database->bind(':id', $_GET['postId']);
+                    $database->execute();
+                    $tagIds = $database->resultset();
+
+                    if ($database->rowNum == 1)
+                    {
+                        $database->query('SELECT tagsId FROM blogPostTags WHERE tagsId = :id');
+                        $database->bind(':id', $tagIds['tagsId']);
+                        $database->resultset();
+
+                        if($database->rowNum == 1)
+                        {
+                            $database->query('DELETE FROM tags WHERE tagsId = :id');
+                            $database->bind(':id', $tagIds['tagsId']);
+                            $database->execute();
+                        }
+                    }
+                    else
+                    {
+                        foreach($tagIds as $value)
+                        {
+                            $database->query('SELECT tagsId FROM blogPostTags WHERE tagsId = :id');
+                            $database->bind(':id', $value['tagsId']);
+                            $database->resultset();
+
+                            if($database->rowNum == 1)
+                            {
+                                $database->query('DELETE FROM tags WHERE tagsId = :id');
+                                $database->bind(':id', $value['tagsId']);
+                                $database->execute();
+                            }
+                        }
+                    }
+
+                    $database->query('DELETE FROM blogPostTags WHERE postId = :id');
+                    $database->bind(':id', $_GET['postId']);
+                    $database->execute();
+
+                    foreach($tags as $value)
+                    {
+                        $database->query('SELECT tagsId FROM tags WHERE name = :name');
+                        $database->bind(':name', $value);
+                        $database->execute();
+                        $result = $database->resultset();
+
+                        if(!$database->rowNum)
+                        {
+                            $database->query('INSERT INTO tags (name) VALUES(:name)');
+                            $database->bind(':name', $value);
+                            $database->execute();
+                            $tagId = $database->lastInsertId();
+
+                            $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
+                            $database->bind(':tag', $tagId);
+                            $database->bind(':post', $_GET['postId']);
+                            $database->execute();
+                        }
+                        else
+                        {
+                            $database->query('INSERT INTO blogPostTags (tagsId, postId) VALUES(:tag, :post)');
+                            $database->bind(':tag', $result['tagsId']);
+                            $database->bind(':post', $_GET['postId']);
+                            $database->execute();
+                        }
+                    }
                 }
 
                 echo "<p style='color: green'>Your post was updated.</p>";
@@ -172,7 +307,35 @@
 
                     <div id="tags">
                         <label for="tag2">Tags</label><span style="margin-left: 5px"><button class="btn btn-default btn-xs" id="addTag">+</button></span>
-                        <input list="tag" id="tag2" name="tag[]" style="width: 135px" required>
+
+                        <?php
+                            $database->query('SELECT name FROM tags LEFT JOIN (blogPostTags) ON (tags.tagsId = blogPostTags.tagsId) WHERE blogPostTags.postId = :inId');
+                            $database->bind(':inId', $_GET['postId']);
+                            $tagName = $database->resultset();
+                            $count = $database->count;
+
+                            if($database->rowNum == 1){
+                                echo '<input list="tag" id="tag2" name="tag[]" style="width: 135px" value="' . $tagName['name'] . '" required>';
+                            }
+                            else
+                            {
+                                $check = true;
+                                $idNumber = 1;
+                                foreach($tagName as $name)
+                                {
+                                    if($check)
+                                    {
+                                        echo '<input list="tag" id="tag2" name="tag[]" style="width: 135px" value="' . $name['name'] . '" required>';
+                                        $check = false;
+                                    }
+                                    else
+                                    {
+                                        echo "<input list='tag' id='". $idNumber ."' name='tag[]' style='margin-top: 10px; width: 135px' value='" . $name['name'] . "' required> <button class='btn btn-default btn-xs remove' id='". $idNumber ."button'>-</button>";
+                                        $idNumber++;
+                                    }
+                                }
+                            }
+                        ?>
                         <datalist id="tag">
                             <?php
                             $database->query('SELECT * FROM tags');
@@ -213,7 +376,7 @@
     {
         $('[data-toggle="tooltip"]').tooltip();
 
-        var count = 1;
+        var count = <?= $count ?>;
         $("#addTag").on("click", function(event)
         {
             event.preventDefault();
