@@ -10,6 +10,11 @@
 
     if(@$_POST['delete'])
     {
+        $database->query('SELECT imgUrl FROM posts WHERE postId = :id');
+        $database->bind(':id', $_GET['postId']);
+        $returned =  $database->resultset();
+        $imgUrl = $returned['imgUrl'];
+
         $database->query('DELETE FROM posts WHERE postId = :id');
         $database->bind(':id', $_GET['postId']);
         $database->execute();
@@ -53,12 +58,16 @@
         $database->bind(':id', $_GET['postId']);
         $database->execute();
 
+        $file = "pictures/" . $imgUrl;
+        unlink($file);
+
         header("Location: index.php");
     }
 
         $database->query("SELECT * FROM posts WHERE postId = :id");
         $database->bind(':id', $_GET['postId']);
         $result = $database->resultset();
+
 ?>
 
 <html lang="en">

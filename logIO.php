@@ -13,7 +13,7 @@
             $user_password = $_POST['password'];
 
             // Look up the username and password in the database
-            $database->query("SELECT userId, userName FROM people WHERE username = :user_username AND password = :user_password");
+            $database->query("SELECT userId, userName FROM people WHERE username = :user_username AND password = SHA(:user_password)");
             $database->bind(':user_username', $user_username);
             $database->bind(':user_password', $user_password);
             $database->execute();
@@ -41,6 +41,21 @@
         }
     }
 
+    if(@$_POST['register'])
+    {
+        $database->query("INSERT INTO people (email, firstName, lastName, password, userName) VALUES (:email, :firstName, :lastName, SHA(:password), :userName);");
+        $database->bind(':email', $_POST['email']);
+        $database->bind(':firstName', $_POST['firstName']);
+        $database->bind(':lastName', $_POST['lastName']);
+        $database->bind(':password', $_POST['password']);
+        $database->bind(':userName', $_POST['username']);
+        $database->execute();
+
+        // The log-in is OK so set the user ID and username session vars (and cookies), and redirect to the home page
+        $_SESSION['user_id'] = $database->lastInsertId();
+        $_SESSION['username'] = $_POST['username'];
+    }
+
     if(isset($_GET['logout']))
     {
         unset($_SESSION['username']);
@@ -53,6 +68,7 @@
         unset($_COOKIE['user_id']);
         unset($_COOKIE['username']);
     }
+
 
     $home_url = 'http://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/index.php';
     header('Location: ' . $home_url);

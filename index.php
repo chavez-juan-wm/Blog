@@ -96,8 +96,8 @@
                             <a class="dropdown-toggle" data-toggle="dropdown">Register <span class="caret"></span></a>
                             <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
                                 <div class="col-lg-12">
-                                    <div class="text-center"><h3><b>Register</b></h3></div>
-                                    <form method="post" role="form">
+                                    <div class="text-center"><h3><b>Register</b></h3><span id="error"></span></div>
+                                    <form method="post" role="form" action="logIO.php" >
                                         <div class="form-group">
                                             <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
                                         </div>
@@ -114,10 +114,10 @@
                                             <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
                                         </div>
                                         <div class="form-group">
-                                            <input type="password" name="confirm-password" id="confirm-password" class="form-control" placeholder="Confirm Password" required>
+                                            <input type="password" name="confirm-password" id="confirm" class="form-control" placeholder="Confirm Password" required>
                                         </div>
                                         <div class="form-group">
-                                            <input type="submit" name="register-submit" id="register-submit" class="form-control btn btn-info" value="Register Now">
+                                            <input type="submit" name="register" id="register" class="form-control btn btn-info" value="Register Now">
                                         </div>
                                     </form>
                                 </div>
@@ -149,16 +149,6 @@
                                                 </div>
                                                 <div class="col-xs-5 pull-right">
                                                     <input type="submit" name="login-submit" id="login-submit" class="form-control btn btn-success" value="Log In">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <div class="row">
-                                                <div class="col-lg-12">
-                                                    <div class="text-center">
-                                                        <a class="forgot-password">Forgot Password?</a>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -245,7 +235,7 @@
                                                 </p>
                                             </div>
 
-                                            <span style="position: absolute; right: 10px; bottom: 9px;"> <button class="btn btn-primary">Read More</button></span>
+                                            <span style="position: absolute; right: 10px; bottom: 9px;"> <a href="readMore.php?postId=<?= $rows['postId'] ?>" class="btn btn-primary">Read More</a></span>
                                         </div>
                                     </div>
                                 </div>
@@ -350,7 +340,7 @@
                                             </p>
                                         </div>
 
-                                        <span style="position: absolute; right: 10px; bottom: 9px;"> <button class="btn btn-primary">Read More</button></span>
+                                        <span style="position: absolute; right: 10px; bottom: 9px;"> <a href="readMore.php?postId=<?= $row['postId'] ?>" class="btn btn-primary">Read More</a></span>
                                     </div>
                                 </div>
                             </div>
@@ -400,6 +390,43 @@
                 {
                     if(<?php if(!isset($_SESSION['username'])) echo true; ?>)
                         event.preventDefault();
+                });
+
+                $("#confirm").on('change', function(){
+                    if(document.getElementById("password").value != document.getElementById("confirm").value)
+                    {
+                        $("#confirm").css("border-color", "red");
+                        $("#password").css("border-color", "gray");
+
+                    }
+                    else if(document.getElementById("password").value == document.getElementById("confirm").value)
+                    {
+                        $("#confirm").css("border-color", "green");
+                        $("#password").css("border-color", "green");
+                    }
+                });
+
+                $("#password").on('change', function(){
+                    if(document.getElementById("password").value != document.getElementById("confirm").value)
+                    {
+                        $("#confirm").css("border-color", "red");
+                        $("#password").css("border-color", "gray");
+
+                    }
+                    else if(document.getElementById("password").value == document.getElementById("confirm").value)
+                    {
+                        $("#confirm").css("border-color", "green");
+                        $("#password").css("border-color", "green");
+                    }
+                });
+
+                $("#register").click(function (event)
+                {
+                    if(document.getElementById("password").value != document.getElementById("confirm").value)
+                    {
+                        event.preventDefault();
+                        document.getElementById("error").innerHTML = "<span style='color: orangered' id='error'>The passwords do not match.</span>"
+                    }
                 });
             });
         </script>
