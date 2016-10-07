@@ -6,6 +6,16 @@ if(isset($_GET['postId']))
     session_start();
 
     $database = new Database();
+    $check = false;
+
+    if(isset($_COOKIE['username']) && isset($_COOKIE['user_id']))
+    {
+        $_SESSION['user_id'] = $_COOKIE['user_id'];
+        $_SESSION['username'] = $_COOKIE['username'];
+    }
+
+    if(isset($_SESSION['userId']))
+        $check = true;
 
     $database->query("SELECT * FROM posts WHERE postId = :id");
     $database->bind(':id', $_GET['postId']);
@@ -40,27 +50,103 @@ if(isset($_GET['postId']))
 
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
-                </ul>
-
-                <ul class="nav navbar-nav">
-                    <li><a href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
-                </ul>
-
-                <ul class="nav navbar-nav">
-                    <li><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
+                    <li <?php if(!$check) echo "class='active'";?>><a href="index.php"><span class="glyphicon glyphicon-home"></span> Home</a></li>
                 </ul>
 
                 <?php
-                if(@isset($_SESSION['user_id']))
+                if(isset($_SESSION['user_id']))
                 {
                     ?>
+                    <ul class="nav navbar-nav">
+                        <li><a id="addPost" href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+                    </ul>
+
+                    <ul class="nav navbar-nav">
+                        <li <?php if($check) echo "class='active'";?>><a id="addPost" href="index.php?userId=<?= $_SESSION['user_id']?>">My Posts</a></li>
+                    </ul>
+
                     <ul class="nav navbar-nav navbar-right">
                         <li><a id="logOut" data-toggle="tooltip" data-placement="bottom" title="Log Out" href="logIO.php?logout=yes"><span class="glyphicon glyphicon-log-out"> </span> <?= $_SESSION['username'] ?></a></li>
                     </ul>
+
                     <?php
 
-                } ?>
+                }
+                else
+                {
+                    ?>
+
+                    <ul class="nav navbar-nav">
+                        <li><a id="addPost" data-toggle="tooltip" data-placement="bottom" title="Log in first to add a post." href="blogPost.php"><span class="glyphicon glyphicon-plus-sign"></span> Add a Post</a></li>
+                    </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown">Register <span class="caret"></span></a>
+                            <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
+                                <div class="col-lg-12">
+                                    <div class="text-center"><h3><b>Register</b></h3><span id="error"></span></div>
+                                    <form method="post" role="form" action="logIO.php" >
+                                        <div class="form-group">
+                                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="firstName" id="firstName" class="form-control" placeholder="First Name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="lastName" id="lastName" class="form-control" placeholder="Last Name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="email" name="email" id="email" class="form-control" placeholder="Email Address" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="password" name="confirm-password" id="confirm" class="form-control" placeholder="Confirm Password" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="submit" name="register" id="register" class="form-control btn btn-info" value="Register Now">
+                                        </div>
+                                    </form>
+                                </div>
+                            </ul>
+                        </li>
+
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-log-in"> </span> Log In <span class="caret"></span></a>
+
+                            <ul class="dropdown-menu dropdown-lr animated slideInRight" role="menu">
+                                <div class="col-lg-12">
+                                    <div class="text-center"><h3><b>Log In</b></h3></div>
+                                    <form method="post" role="form" action="logIO.php">
+                                        <div class="form-group">
+                                            <label for="username">Username</label>
+                                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="password">Password</label>
+                                            <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <div class="row">
+                                                <div class="col-xs-7">
+                                                    <input type="checkbox" name="remember" id="remember" value="remember">
+                                                    <label for="remember"> Remember Me</label>
+                                                </div>
+                                                <div class="col-xs-5 pull-right">
+                                                    <input type="submit" name="login-submit" id="login-submit" class="form-control btn btn-success" value="Log In">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </ul>
+                        </li>
+                    </ul>
+                <?php }?>
             </div>
         </div>
     </nav>
@@ -114,8 +200,50 @@ if(isset($_GET['postId']))
         {
             $('[data-toggle="tooltip"]').tooltip();
 
+            $("#addPost").on("click", function(event)
+            {
+                if(<?php if(!isset($_SESSION['username'])) echo true; ?>)
+                    event.preventDefault();
+            });
+
+            $("#confirm").on('change', function(){
+                if(document.getElementById("password").value != document.getElementById("confirm").value)
+                {
+                    $("#confirm").css("border-color", "red");
+                    $("#password").css("border-color", "gray");
+
+                }
+                else if(document.getElementById("password").value == document.getElementById("confirm").value)
+                {
+                    $("#confirm").css("border-color", "green");
+                    $("#password").css("border-color", "green");
+                }
+            });
+
+            $("#password").on('change', function(){
+                if(document.getElementById("password").value != document.getElementById("confirm").value)
+                {
+                    $("#confirm").css("border-color", "red");
+                    $("#password").css("border-color", "gray");
+
+                }
+                else if(document.getElementById("password").value == document.getElementById("confirm").value)
+                {
+                    $("#confirm").css("border-color", "green");
+                    $("#password").css("border-color", "green");
+                }
+            });
+
+            $("#register").click(function (event)
+            {
+                if(document.getElementById("password").value != document.getElementById("confirm").value)
+                {
+                    event.preventDefault();
+                    document.getElementById("error").innerHTML = "<span style='color: orangered' id='error'>The passwords do not match.</span>"
+                }
+            });
         });
-    </script
+    </script>
     </body>
     </html>
 
