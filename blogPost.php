@@ -195,7 +195,6 @@
                         <input class="btn btn-primary" style="position: absolute; bottom: 0; right: 0" type="submit" id="submit" name="submit" value="Submit" />
                     </div>
                 </div>
-<!--                <input type="submit" name="update" value="Update">-->
             </form>
         </div>
     </div>

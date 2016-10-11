@@ -164,7 +164,23 @@
 
         <div class="container">
             <?php
-            if($database->rowNum == 1)
+            if(!$database->rowNum){
+                ?>
+            <div class="row">
+                <div class="col-xs-12 col-sm-10">
+                    <div class="row row-content">
+                        <?php
+                            if($check)
+                                echo "<p>You currently have no posts.</p>";
+                            else
+                                echo "<p>There are currently no posts.</p>";
+                        ?>
+                    </div>
+                </div>
+            </div>
+                <?php
+            }
+            else if($database->rowNum == 1)
             { ?>
                 <div class="row">
                     <div class="col-xs-12 col-sm-10">

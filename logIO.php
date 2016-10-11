@@ -35,7 +35,7 @@
             else
             {
                 // The username/password are incorrect so set an error message
-                $error_msg = '<p style="color: red">Sorry, you must enter a valid username and password to log in.</p>>';
+                $error_msg = '<p style="color: red">Sorry, you must enter a valid username and password to log in.</p>';
                 $_SESSION['error'] = $error_msg;
             }
         }
@@ -54,6 +54,7 @@
         // The log-in is OK so set the user ID and username session vars (and cookies), and redirect to the home page
         $_SESSION['user_id'] = $database->lastInsertId();
         $_SESSION['username'] = $_POST['username'];
+        unset($_SESSION['error']);
     }
 
     if(isset($_GET['logout']))
